@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+  before_action :prepare_cart
   # Deviseのコントローラ実行時にストロングパラメータを設定
   before_action :configure_permitted_parameters, if: :devise_controller?
 
@@ -6,9 +7,13 @@ class ApplicationController < ActionController::Base
   # 商品詳細ページ（products#show）を見た場合のみ、セッションに商品IDを記録する
   before_action :store_recent_product
   include PriceCalculations # モジュールを読み込むことで共通メソッドを全体のコントローラーで使用可能に
+
+  # ユーザがログインしている場合、セッションのカート情報をDBのカートにマージする
+  before_action :prepare_cart, if: :user_signed_in? # 追加
   
    # ログイン後の遷移先を設定
   def after_sign_in_path_for(resource)
+    session.delete(:cart_merged) # 追加 
     mypage_path(resource)
   end
 
@@ -18,6 +23,12 @@ class ApplicationController < ActionController::Base
   end
 
   protected
+
+  def prepare_cart
+    # 例: セッションからカートを取得するか、新しく作成する処理
+    @cart = Cart.find_by(id: session[:cart_id]) || Cart.create
+    session[:cart_id] = @cart.id
+  end
 
   # サインアップ時に name と admin_flg を許可
   def configure_permitted_parameters

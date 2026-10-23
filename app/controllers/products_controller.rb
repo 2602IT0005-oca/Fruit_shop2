@@ -57,12 +57,22 @@ class ProductsController < ApplicationController
     redirect_to products_path
   end
 
+  module PriceCalculations
+# 追加
+  # ユーザのカート合計金額を再計算
+  def user_cart_calculation
+    cart = Cart.find_by(user_id: current_user.id)
+    @item_totals = cart.cart_items.map { |item| calculate_item_total(item.product.price, item.quantity) }
+    @cart_total = calculate_total_sum(@item_totals)
+  end
+
   private
 
     # ストロングパラメータで、フォームから送信されたデータを許可する
     def product_params
       params.require(:product).permit(:name, :description, :price, :photo)
     end
+  end
 
     # 管理者確認メソッド
     def check_admin
